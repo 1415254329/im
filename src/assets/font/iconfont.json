@@ -1,0 +1,51 @@
+{
+  "id": "2026156",
+  "name": "im",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "7275426",
+      "name": "Image",
+      "font_class": "Image",
+      "unicode": "e6a2",
+      "unicode_decimal": 59042
+    },
+    {
+      "icon_id": "6084646",
+      "name": "sound",
+      "font_class": "sound",
+      "unicode": "e6be",
+      "unicode_decimal": 59070
+    },
+    {
+      "icon_id": "7754556",
+      "name": "sound wave.1",
+      "font_class": "soundwave",
+      "unicode": "eab1",
+      "unicode_decimal": 60081
+    },
+    {
+      "icon_id": "8407474",
+      "name": "icon／ my／ expression_28",
+      "font_class": "iconmyexpression_",
+      "unicode": "e63b",
+      "unicode_decimal": 58939
+    },
+    {
+      "icon_id": "14186846",
+      "name": "add",
+      "font_class": "add",
+      "unicode": "e627",
+      "unicode_decimal": 58919
+    },
+    {
+      "icon_id": "15783105",
+      "name": "arrowl",
+      "font_class": "arrowl",
+      "unicode": "e600",
+      "unicode_decimal": 58880
+    }
+  ]
+}
