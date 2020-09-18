@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "1219402",
+      "name": "chat_sound",
+      "font_class": "chat_sound",
+      "unicode": "e604",
+      "unicode_decimal": 58884
+    },
+    {
+      "icon_id": "1898940",
+      "name": "phone",
+      "font_class": "phone",
+      "unicode": "e6f0",
+      "unicode_decimal": 59120
+    },
+    {
       "icon_id": "7275426",
       "name": "Image",
       "font_class": "Image",

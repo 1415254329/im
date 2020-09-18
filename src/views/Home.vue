@@ -3,6 +3,7 @@
     <div class="header fixed center backfff ">
       <div class="iconfont icon-arrowl absolute" @click="back" v-if="Mobile"></div>
       <div class="ft18">{{youAccid}}</div>
+      <div class="iconfont icon-phone absolute phoneIcon" @click="Phone" v-if="Mobile"></div>
     </div>
     <van-pull-refresh v-model="isLoading" @refresh="onRefresh" :class="!disabled ? 'vanpull' : 'a12'"
       :disabled="disabled">
@@ -10,17 +11,19 @@
         <div class="time center ft12 colorbbb">{{time}}</div>
         <div v-for="(item,index) in list">
           <div class="you clearfix conbox" v-if="item.flow == 'in'">
-            <img src="https://dss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=251289958,1860898046&fm=26&gp=0.jpg"
-              class="photo left col10" />
+            <img src="@/assets/img/photo2.jpg" class="photo left col10" />
             <div class="right col85 ">
               <div style="display: inline-block;">
                 <img class="conImg" v-if="item.type == 'image'" :src="item.file.url" alt="" @click="ImgClick(index)">
                 <div class="conText backfff" v-else-if="item.type == 'text'"> {{item.text}}</div>
                 <div class="conText backfff" v-else-if="item.type == 'custom'"> {{item.content}}</div>
-                <audio v-else-if="item.type == 'audio' || item.type == 'file'" :src="item.file.url"
-                  controls="controls"></audio>
-              </div>
+                <audio v-else-if="item.type == 'audio' || item.type == 'file'" :src="item.file.url" controls="controls"
+                  @canplay="AudioTime(index)" ref="audio"></audio>
+                <div class="audiobox" v-if="item.type == 'audio' || item.type == 'file'" @click="AudioPlay(index)">
+                  <span class="iconfont icon-chat_sound"></span>{{(item.file.size/100000).toFixed(0)}}
+                </div>
 
+              </div>
             </div>
           </div>
           <div class="i clearfix conbox" v-else>
@@ -32,32 +35,34 @@
                   <div class="conText back98e165" v-else-if="item.type == 'text'"> {{item.text}}</div>
                   <div class="conText back98e165" v-else-if="item.type == 'custom'"> {{item.content}}</div>
                   <audio v-else-if="item.type == 'audio' || item.type == 'file'" :src="item.file.url"
-                    controls="controls"></audio>
+                    controls="controls" @canplay="AudioTime(index)" ref="audio"></audio>
+                  <div class="audiobox" v-if="item.type == 'audio' || item.type == 'file'" @click="AudioPlay(index)">
+                    <span class="iconfont icon-chat_sound"></span>{{(item.file.size/100000).toFixed(0)}}
+                  </div>
+
                 </div>
 
               </div>
 
             </div>
-            <img src="https://dss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=3582194852,1481557220&fm=26&gp=0.jpg"
-              class="photo right col10" />
+            <img src="@/assets/img/photo1.jpg" class="photo right col10" />
+
           </div>
         </div>
       </div>
     </van-pull-refresh>
     <div class="fixed fixedbot clearfix">
       <div class="left col10 center mar relative">
-        <div v-if="Mobile">
+        <div>
           <div class="iconfont icon-sound ft22" @touchstart="AudioSendStart" @touchend="AudioSendEnd"></div>
-          <input type="file" accept="audio/*" capture="microphone" @change="AudioSend" id="audioSend" class="absInput">
+         
         </div>
 
       </div>
       <div class="left col60">
-        <!-- <input type="text" class="col100" v-model="content" name="emoji"> -->
+        
         <textarea class="col100 inputContent" v-model="content" name="emoji" @input="InputContent"
           :style="{height: textarea.height}">
-
-
         </textarea>
       </div>
       <div class="left col8 center mar ">
@@ -82,6 +87,7 @@
 
 <script>
   import NIM from "@/assets/js/NIM_Web_NIM_v7.8.1.js"
+  import WebRTC from "@/assets/js/NIM_Web_WebRTC_v7.8.1.js"
   import { Picker } from "emoji-mart-vue";
   import Recorder from 'js-audio-recorder'
   export default {
@@ -94,12 +100,13 @@
         myAccid: null,
         myToken: null,
         youAccid: null,
+        netcall: null,
         time: '下拉加载历史记录',
         nim: null,
         list: [],//聊天对话
         isLoading: false,
         disabled: false,//禁止加载更多
-        content: ' ',//input中的内容
+        content: '',//input中的内容
         bigImg: {
           imgScreen: false,//图片放大遮幕
           imgUrl: null,//图片放大路径
@@ -111,15 +118,110 @@
         textarea: {
           height: '28px',
         },
-        audioSend: {//录音合集
+        audioSend: {//录音按钮合集合集
           fun: null,
           starttime: 0,
           plug: null,
-        }
+        },
+        audioTime: [
+
+        ]
       }
     },
     methods: {
+      AudioPlay(e) {//录音播放暂停
+        if (this.list[e].audioObj.currentTime == 0 || this.list[e].audioObj.currentTime == this.list[e].audioObj.duration) {
+          this.list[e].audioObj.play();
+        } else {
+          if (this.list[e].audioObj.paused) {
+            this.list[e].audioObj.play();
+          } else {
+            this.list[e].audioObj.pause();
+          }
+        }
+      },
+      AudioTime(e) {
+        this.list[e]['audioObj'] = this.$refs.audio[e];
+      },
+      Phone: function () {
+        const pushConfig = {
+          enable: true,
+          needBadge: true,
+          needPushNick: true,
+          pushContent: '',
+          custom: '测试自定义数据',
+          pushPayload: '',
+          sound: '',
+          forceKeepCalling: 0
+        };
+        const sessionConfig = {
+          videoQuality: WebRTC.CHAT_VIDEO_QUALITY_HIGH,
+          videoFrameRate: WebRTC.CHAT_VIDEO_FRAME_RATE_15,
+          videoBitrate: 0,
+          recordVideo: false,
+          recordAudio: false,
+          highAudio: false,
+          bypassRtmp: false,
+          rtmpUrl: '',
+          rtmpRecord: false,
+          splitMode: WebRTC.LAYOUT_SPLITLATTICETILE
+        };
+        var that = this;
+        this.netcall.call({
+          type: WebRTC.NETCALL_TYPE_AUDIO,
+          account: that.youAccid,
+          pushConfig: pushConfig,
+          sessionConfig: sessionConfig
+        }).then(function (res) {
+          console.log(res);
+        }).catch(function (res) {
+          console.log(res)
+        })
 
+      },
+      PassivePhone: function () {
+        // 是否被叫中
+        let beCalling = false;
+        // 呼叫类型
+        let type = null;
+        // 被叫信息
+        let beCalledInfo = null;
+        // 是否正忙
+        let busy = false;
+        // 开启监听
+        this.netcall.on('beCalling', function (obj) {
+          console.log('on beCalling', obj);
+          /* const channelId = obj.channelId;
+          // 被叫回应主叫自己已经收到了通话请求
+          this.netcall.control({
+            channelId: channelId,
+            command: WebRTC.NETCALL_CONTROL_COMMAND_START_NOTIFY_RECEIVED
+          });
+          // 只有在没有通话并且没有被叫的时候才记录被叫信息, 否则通知对方忙并拒绝通话
+          if (!netcall.calling && !beCalling) {
+            type = obj.type;
+            beCalling = true;
+            beCalledInfo = obj;
+          } else {
+            if (netcall.calling) {
+              busy = netcall.notCurrentChannelId(obj);
+            } else if (beCalling) {
+              busy = beCalledInfo.channelId !== channelId;
+            }
+            if (busy) {
+              netcall.control({
+                channelId: channelId,
+                command: WebRTC.NETCALL_CONTROL_COMMAND_BUSY
+              });
+              // 拒绝通话
+              netcall.response({
+                accepted: false,
+                beCalledInfo: obj
+              });
+            }
+          } */
+        });
+      },
       Push() {//消息推送
         var that = this;
         this.$axios({
@@ -135,9 +237,9 @@
       },
       AudioSendStart() {//手指按下时
         var that = this;
+        that.audioSend.plug.start();
         this.audioSend.fun = setTimeout(function () {
           that.audioSend.starttime = 1;
-          that.audioSend.plug.start();
         }, 1000)
       },
       AudioSendEnd() {//手指松开时
@@ -145,30 +247,36 @@
         clearTimeout(that.audioSend.fun);
         if (that.audioSend.starttime != 1) {
           that.$toast('按住时间不超过一秒');
+          that.audioSend.plug.stop();
         } else {
           that.audioSend.plug.stop();
-          that.nim.sendFile({
-            scene: 'p2p',
-            to: that.youAccid,
-            fileInput: that.audioSend.plug.getWAVBlob(),
-            uploadprogress: function (obj) {
-              console.log('文件总大小: ' + obj.total + 'bytes');
-              console.log('已经上传的大小: ' + obj.loaded + 'bytes');
-              console.log('上传进度: ' + obj.percentage);
-              console.log('上传进度文本: ' + obj.percentageText);
-            },
-            uploaddone: function (error, file) {
-              console.log('上传' + (!error ? '成功' : '失败'), error, file);
-            },
-            beforesend: function (msg) {
-              console.log('正在发送p2p image消息, id=' + msg.idClient);
-              pushMsg(msg);
-            },
-            done: function (res) {
-              console.log(res);
-            }
-          });
-          console.log(that.audioSend.plug.getWAVBlob())
+          console.log(that.audioSend.plug.getWAVBlob());
+          if (that.audioSend.plug.getWAVBlob().size > 100) {
+            that.nim.sendFile({
+              scene: 'p2p',
+              to: that.youAccid,
+              blob: that.audioSend.plug.getWAVBlob(),
+              uploadprogress: function (obj) {
+                console.log('文件总大小: ' + obj.total + 'bytes');
+                console.log('已经上传的大小: ' + obj.loaded + 'bytes');
+                console.log('上传进度: ' + obj.percentage);
+                console.log('上传进度文本: ' + obj.percentageText);
+              },
+              uploaddone: function (error, file) {
+                console.log('上传' + (!error ? '成功' : '失败'), error, file);
+              },
+              beforesend: function (msg) {
+                that.list.push(msg);
+              },
+              done: function (error, msg) {
+                console.log(error, msg);
+              }
+            });
+          } else {
+            that.$toast('请重新录音');
+          }
+
+
           that.audioSend.plug.destroy();
         }
         that.audioSend.starttime = 0;
@@ -189,43 +297,7 @@
         this.bigImg.imgUrl = this.list[e].file.url;
         this.bigImg.imgScreen = true;
       },
-      AudioSend: function (e) {//语音录制
-        console.log(audioSend);
-        var that = this;
-        that.nim.previewFile({
-          type: '',
-          fileInput: audioSend,
-          uploadprogress: function (obj) {
-            console.log('文件总大小: ' + obj.total + 'bytes');
-            console.log('已经上传的大小: ' + obj.loaded + 'bytes');
-            console.log('上传进度: ' + obj.percentage);
-            console.log('上传进度文本: ' + obj.percentageText);
-          },
-          done: function (error, file) {
-            console.log('上传Audio' + (!error ? '成功' : '失败'));
-            // show file to the user
-            if (!error) {
-              that.nim.sendFile({
-                scene: 'p2p',
-                to: that.youAccid,
-                file: file,
-                done: function (error, msg) {
-                  var mp3 = that.nim.audioToMp3({
-                    url: msg.file.url
-                  });
-                  msg.file.url = mp3;
-                  that.list.push(msg);
-                  setTimeout(function () {
-                    window.scrollTo(0, 999999);
-                  }, 100)
-                }
-              });
-            }
-          }
-        });
-      },
-
-
+     
       ImageSend: function () {//发送图片
         var that = this;
         this.nim.sendFile({
@@ -279,7 +351,7 @@
         console.log(msg);
         if (!error) {
           this.list.push(msg);
-          this.content = null;
+          this.content = '';
           setTimeout(function () {
             window.scrollTo(0, 999999);
           }, 100)
@@ -318,11 +390,9 @@
           }
         }, 1000);
       },
-
       back() {
         this.$router.go(-1)
       },
-
       Text() {//IM初始化
         var data = {};
         var that = this;
@@ -340,6 +410,7 @@
         });
         function onConnect(res) {
           console.log('连接成功');
+          that.ReadyNum();//一开始的聊天数量
         };
         function onWillReconnect(res) {
           console.log('即将重连');
@@ -403,7 +474,6 @@
         };
         that.Mobile = !IsPC()
       },
-
       handleScroll() {
         var that = this;
         setTimeout(() => {
@@ -424,14 +494,14 @@
               function getHistoryMsgsDone(error, obj) {
                 console.log('获取云端历史记录' + (!error ? '成功' : '失败'), error, obj);
                 if (!error) {
-                  for (let i = 0; i < obj.msgs.length; i++) {
+                  /* for (let i = 0; i < obj.msgs.length; i++) {
                     if (obj.msgs[i].type == "audio" || obj.msgs[i].type == "file") {
                       var mp3 = that.nim.audioToMp3({
                         url: obj.msgs[i].file.url
                       });
                       obj.msgs[i].file.url = mp3
                     }
-                  }
+                  } */
                   that.list = obj.msgs.reverse();
                   that.time = '到顶了';
                   that.disabled = true;//禁止加载更多
@@ -446,11 +516,36 @@
           }
         }, 1000);
       },
+      ReadyNum: function () {
+        var that = this;
+        setTimeout(function () {
+          that.nim.getHistoryMsgs({
+            scene: 'p2p',
+            to: that.youAccid,
+            done: getHistoryMsgsDone
+          });
+          function getHistoryMsgsDone(error, obj) {
+            if (!error) {
+              obj.msgs.splice(5, obj.msgs.length);
+              that.list = obj.msgs.reverse();
+            
+            }
+          }
+        }, 400);
+      },
+      AudioAndVideo: function () {//音视频集成
+        var that = this;
+        const Netcall = WebRTC;
+        this.netcall = Netcall.getInstance({
+          nim: that.nim,
+          debug: true
+        });
+
+      },
       MyFun() {
         var that = this;
         this.IsPc();
         this.bigImg.window = document.body.clientHeight + 'px';//点击图片放大fixed高度
-        console.log(this.$route.query);
         this.myAccid = this.$route.query.yunxinAccid;
         this.myToken = this.$route.query.yunxinToken;
         this.youAccid = this.$route.query.youAccid;
@@ -463,40 +558,16 @@
             }
           })
         }
-        setTimeout(function () {
-          that.nim.getHistoryMsgs({
-            scene: 'p2p',
-            to: that.youAccid,
-            done: getHistoryMsgsDone
-          });
-          function getHistoryMsgsDone(error, obj) {
-            console.log(obj,error)
-            if (!error) {
-              for (let i = 0; i < 4; i++) {
-                if (obj.msgs[i].type == "audio" || obj.msgs[i].type == "file") {
-                  var mp3 = that.nim.audioToMp3({
-                    url: obj.msgs[i].file.url
-                  });
-                  obj.msgs[i].file.url = mp3
-                }
-              }
-              console.log(obj.msgs.splice(5, obj.msgs.length));
-              that.list = obj.msgs.reverse();
-            }
-          }
-        }, 300)
 
+        this.AudioAndVideo();//音视频SDK
+        this.PassivePhone();//被动呼叫
       },
     },
-
     created: function () {
       var that = this;
       this.MyFun();
       this.Text();
       window.addEventListener('mousewheel', this.handleScroll, true);
-
-
-
     }
   }
 </script>
@@ -592,7 +663,27 @@
     border-radius: 5px;
   }
 
+  .conbox audio {
+    display: none;
+  }
+
   .conbox {
     margin-bottom: 15px;
+  }
+
+  .audiobox {
+    background-color: #fff;
+    padding: 0px 20px;
+    border-radius: 5px;
+    line-height: 35px;
+  }
+
+  .audiobox span {
+    margin-right: 10px;
+  }
+
+  .phoneIcon {
+    right: 15px;
+    top: 1px;
   }
 </style>
