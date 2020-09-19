@@ -206,7 +206,7 @@
   }
 
   .back98e165 {
-    background-color: #98e165;
+    background-color: #98e165 !important;
   }
 
   .backfff {
@@ -232,7 +232,9 @@
   .color1BA886 {
     color: #1BA886;
   }
-
+  .bcakfff{
+    background-color: #FFFFFF !important;
+  }
   .bacff3f3f3 {
     background-color: #f3f3f3;
   }
@@ -289,4 +291,14 @@
   .width1200{
     width: 1200px;
   }
+  .lheight50{
+    line-height: 50px !important;
+  }
+  .pointer{
+    cursor: pointer;
+  }
+  .border0{
+    border:none;
+  }
+  
 </style>
