@@ -6,6 +6,13 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "12579419",
+      "name": "phone-hang-up",
+      "font_class": "phone-hang-up",
+      "unicode": "e757",
+      "unicode_decimal": 59223
+    },
+    {
       "icon_id": "1219402",
       "name": "chat_sound",
       "font_class": "chat_sound",

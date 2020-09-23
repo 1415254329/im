@@ -3,12 +3,12 @@
     <div class="header fixed center backfff" v-if="Mobile">
       <div class="iconfont icon-arrowl absolute" @click="back" v-if="Mobile"></div>
       <div class="ft18">{{youAccid}}</div>
-      <div class="iconfont icon-phone absolute phoneIcon" @click="Phone" v-if="Mobile"></div>
+
     </div>
     <div class="header fixed center backfff lheight50" v-else>
       <div class="iconfont icon-arrowl absolute" @click="back" v-if="Mobile"></div>
       <div class="ft18">{{youAccid}}</div>
-      <div class="iconfont icon-phone absolute phoneIcon" @click="Phone" v-if="Mobile"></div>
+
     </div>
     <van-pull-refresh v-model="isLoading" @refresh="onRefresh" :class="!disabled ? 'vanpull' : 'a12'"
       :disabled="disabled">
@@ -65,7 +65,11 @@
             <div class="iconfont icon-Image ft22 pointer"></div>
             <input type="file" @change="ImageSend" id="imageSend" class="absInput pointer">
           </div>
-          <div class="right col10 center mar relative ">
+          <div class="left col5 center mar relative left15">
+            <div class="iconfont icon-phone  phoneIcon" @click="Phone"></div>
+          </div>
+          <div class="right col10 center mar relative clearfix">
+
             <div>
               <div class="iconfont icon-sound ft22" @touchstart="AudioSendStart" @touchend="AudioSendEnd" v-if="Mobile">
               </div>
@@ -81,12 +85,27 @@
         </div>
       </div>
     </div>
+    <!-- 图片点击放大定位 -->
     <div class="fixed bigImgCssBox" v-if="bigImg.imgScreen" v-bind:style="{height: bigImg.window}"
       @click="BigImgCssBox">
       <img :src="bigImg.imgUrl" alt="" class="col100">
     </div>
+    <!-- 表情包定位 -->
     <picker :include="['people']" :showSearch="false" :showPreview="false" :showCategories="false" @select="addEmoji"
       v-if="emoji.emojiStatus" />
+    <!-- 确认聊天定位 -->
+    <van-popup v-model="calling" position="bottom" :style="{ height: '100%' }">
+      <div class="callingback">
+        <div class="calling80 relative">
+          <div class="center "><img src="@/assets/img/photo1.jpg" class="callingImg  col30 " /></div>
+          <div class="center absolute iconhangupbox">
+            <span class="iconfont icon-phone-hang-up iconhangup" @click="HangHp"></span>
+          </div>
+        </div>
+
+
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -101,7 +120,14 @@
     },
     data() {
       return {
-        Mobile: true,
+        Mobile: true,//是否为手机
+        calling: false,//是否为通话中
+        callingStatus: {
+          beCalling: false,
+          type: null,
+          beCalledInfo: null,
+          busy: false
+        },
         myAccid: null,
         myToken: null,
         youAccid: null,
@@ -128,10 +154,21 @@
           starttime: 0,
           plug: null,
         },
-        audioTime: []
+        audioTime: [],
       }
     },
     methods: {
+      HangHp() {//音视频通话挂断
+        this.netcall.hangup();
+        this.calling = false;
+        this.callingStatus.beCalling = false;
+        // 呼叫类型
+        this.callingStatus.type = null;
+        // 被叫信息
+        this.callingStatus.beCalledInfo = null;
+        // 是否正忙
+        this.callingStatus.busy = false;
+      },
       AudioPlay(e) {//录音播放暂停
         console.log(this.list);
         if (this.list[e].audioObj.currentTime == 0 || this.list[e].audioObj.currentTime == this.list[e].audioObj.duration) {
@@ -145,15 +182,17 @@
         }
       },
       AudioTime(e) {//audio对象赋予list
+        console.log(e);
         this.list[e]['audioObj'] = this.$refs.audio[e];
       },
       Phone: function () {//CAll
         var that = this;
+        const netcall = this.netcall;
         const pushConfig = {
           enable: false,
           needBadge: false,
           needPushNick: false,
-          pushContent: '',
+          pushContent: '2020年9月22日15:29:15',
           custom: '测试自定义数据',
           pushPayload: '',
           sound: '',
@@ -171,39 +210,54 @@
           rtmpRecord: false,
           splitMode: WebRTC.LAYOUT_SPLITLATTICETILE
         };
-
-        console.log(WebRTC.NETCALL_TYPE_AUDIO);
-        this.netcall.call({//发起呼叫请求
-          type: WebRTC.NETCALL_TYPE_AUDIO,
-          webrtcEnable: true,
-          account: that.youAccid,
-          pushConfig: pushConfig,
-          sessionConfig: sessionConfig
-        }).then(function (obj) {//成功发起呼叫
-          console.log('成功发起呼叫,111111111111111111111111111111111111111111', obj);
-          that.netcall.on('callAccepted', function (obj) {
-            // 缓存呼叫类型，后面开启音视频连接需要用到
-            console.log('主叫收到被叫响应通知-接受，44444444444444444444444444444444444444444444444444444444444444444444444', obj);
-
-            // 可以开启音视频连接操作。。。
-            that.MicrophoneCall();
-          });
-        }).catch(function (err) {//失败呼叫回调
-          console.log(err)
+        this.$dialog.confirm({
+          title: '确定要拨打么',
         })
+          .then(() => {
+            that.netcall.call({//发起呼叫请求
+              type: WebRTC.NETCALL_TYPE_AUDIO,
+              webrtcEnable: true,
+              account: that.youAccid,
+              pushConfig: pushConfig,
+              sessionConfig: sessionConfig
+            }).then(function (obj) {//成功发起呼叫
+              console.log('成功发起呼叫,111111111111111111111111111111111111111111', obj);
+              that.netcall.on('callAccepted', function (obj) {
+                // 缓存呼叫类型，后面开启音视频连接需要用到
+                console.log('主叫收到被叫响应通知-接受，44444444444444444444444444444444444444444444444444444444444444444444444', obj);
+                const netcall = that.netcall;
+                const audioSource = new MediaStream();
+                console.log(audioSource);
+                console.log(WebRTC.DEVICE_TYPE_AUDIO_OUT_CHAT);
 
+                netcall.startDevice({
+                  type: WebRTC.DEVICE_TYPE_AUDIO_OUT_CHAT
+                }).catch(function () {
+                  console.log('播放对方的声音失败')
+                }).then(function () {
+                  console.log('播放对方的声音成功');
+                  that.calling = true;
 
+                })
+              });
+            }).catch(function (err) {//失败呼叫回调
+              console.log(err)
+            })
+          })
+          .catch(() => {
+            // on cancel
+          });
       },
       PassivePhone: function () {//被Call
         var that = this;
         // 是否被叫中
-        let beCalling = false;
+        this.callingStatus.beCalling = false;
         // 呼叫类型
-        let type = null;
+        this.callingStatus.type = null;
         // 被叫信息
-        let beCalledInfo = null;
+        this.callingStatus.beCalledInfo = null;
         // 是否正忙
-        let busy = false;
+        this.callingStatus.busy = false;
         const sessionConfig = {
           videoQuality: WebRTC.CHAT_VIDEO_QUALITY_HIGH,
           videoFrameRate: WebRTC.CHAT_VIDEO_FRAME_RATE_15,
@@ -216,109 +270,121 @@
           rtmpRecord: false,
           splitMode: WebRTC.LAYOUT_SPLITLATTICETILE
         };
+        const netcall = this.netcall;
         // 开启监听
-        this.netcall.on('beCalling', function (obj) {
-          console.log('被叫收到请求,22222222222222222222222222222222', obj);
+        netcall.on('beCalling', function (obj) {
+          console.log('on beCalling', obj);
           const channelId = obj.channelId;
           // 被叫回应主叫自己已经收到了通话请求
-          that.netcall.control({
+          netcall.control({
             channelId: channelId,
             command: WebRTC.NETCALL_CONTROL_COMMAND_START_NOTIFY_RECEIVED
           });
-
-          setTimeout(function () {
-            that.netcall.response({
-              accepted: true,
-              beCalledInfo: beCalledInfo,
-              sessionConfig: sessionConfig
-            }).catch(function (err) {
-              console.log('被叫响应通话请求失败333333333333333333333333333333333333333333333333333333333')
-              console.log(err)
-            }).then(function (res) {
-              console.log('被叫响应通话请求成功33333333333333333333333333333333333333333333333333333333333')
-              console.log(res);
-            })
-          }, 1000)
-
-
           // 只有在没有通话并且没有被叫的时候才记录被叫信息, 否则通知对方忙并拒绝通话
-          if (!that.netcall.calling && !beCalling) {
-            type = obj.type;
-            beCalling = true;
-            beCalledInfo = obj;
+          if (!netcall.calling && !that.callingStatus.beCalling) {
+            that.callingStatus.type = obj.type;
+            that.callingStatus.beCalling = true;
+            that.callingStatus.beCalledInfo = obj;
+            //alert("收到" + obj.account + "的呼叫");
           } else {
-            if (that.netcall.calling) {
-              busy = that.netcall.notCurrentChannelId(obj);
-            } else if (beCalling) {
-              busy = beCalledInfo.channelId !== channelId;
+            if (netcall.calling) {
+              that.callingStatus.busy = netcall.notCurrentChannelId(obj);
+            } else if (that.callingStatus.beCalling) {
+              that.callingStatus.busy = that.callingStatus.beCalledInfo.channelId !== channelId;
             }
-            if (busy) {
-              that.netcall.control({
+            if (that.callingStatus.busy) {
+              netcall.control({
                 channelId: channelId,
                 command: WebRTC.NETCALL_CONTROL_COMMAND_BUSY
               });
               // 拒绝通话
-              that.netcall.response({
+              console.log(that.callingStatus.busy, '正忙')
+              netcall.response({
                 accepted: false,
-                beCalledInfo: obj
               });
             }
           }
-
-
+          that.$dialog.confirm({
+            title: '收到' + that.youAccid + '的呼叫',
+          }).then(function (res) {
+            netcall.response({
+              accepted: true,
+              beCalledInfo: that.callingStatus.beCalledInfo,
+              sessionConfig: sessionConfig
+            }).catch(function (err) {
+              reject();
+              console.log('接听失败', err);
+            });
+          }).catch(function () {
+            netcall.response({
+              accepted: false,
+              beCalledInfo: obj
+            });
+          })
 
         });
 
-      },
-      MicrophoneCall() {//开启音视频连接
-        const netcall = this.netcall
-        // 连接媒体网关
-        netcall.startRtc().then(function () {
-          // 开启麦克风
-          return netcall.startDevice({
-            type: WebRTC.DEVICE_TYPE_AUDIO_IN
-          }).catch(function (err) {
-          })
-        })
-          .then(function () {
-            // 设置采集音量
-            netcall.setCaptureVolume(255)
+        netcall.on('callAccepted', function (obj) {
+          that.callingStatus.type = obj.type;
+          console.log('on callAccepted', obj);
+          netcall.startRtc().then(function () {
+            // 开启麦克风
+            netcall.startDevice({
+              type: WebRTC.DEVICE_TYPE_AUDIO_IN,
+              //device: device
+            }).then(function () {
+              console.log('启动麦克风成功')
+              //通知麦克风打开
+              var param = {
+                channelId: netcall.channelId,
+                command: WebRTC.NETCALL_CONTROL_COMMAND_NOTIFY_AUDIO_ON
+              }
+              netcall.control(param)
+              // 设置采集音量
+              netcall.setCaptureVolume(255);
+              that.calling = true;
+            }).catch(function (err) {
+              console.log('启动麦克风失败', err)
+            })
 
           })
-          .then(function () {
-            console.log('启动麦克风成功')
-          })
-          .catch(function (err) {
-            console.log('发生错误')
-            console.log(err)
-            netcall.hangup()
-          })
-
-        // 在回调里监听对方加入通话，并显示对方的视频画面
+            .catch(function (err) {
+              console.log('发生错误')
+              console.log(err)
+              netcall.hangup()
+            })
+        });
         netcall.on('remoteTrack', function (obj) {
           console.log('user join', obj)
           // 播放对方声音
           netcall.startDevice({
-            type: Netcall.DEVICE_TYPE_AUDIO_OUT_CHAT
+            type: WebRTC.DEVICE_TYPE_AUDIO_OUT_CHAT
           }).catch(function (err) {
             console.log('播放对方的声音失败')
             console.error(err)
           })
-          // 预览对方视频画面
-          netcall.startRemoteStream({
-            account: obj.account,
-            node: document.getElementById('remoteContainer')
-          })
-          // 设置对方预览画面大小
-          netcall.setVideoViewRemoteSize({
-            account: obj.account,
-            width: 500,
-            height: 500,
-            cut: true
-          })
-        })
+        });
 
+        netcall.on('hangup', function (obj) {
+          console.log('on hangup', obj);
+          // 判断需要挂断的通话是否是当前正在进行中的通话
+          console.log(!that.callingStatus.beCalledInfo)
+          //console.log(beCalledInfo.channelId)
+          console.log(obj.channelId);
+          if (!that.callingStatus.beCalledInfo || that.callingStatus.beCalledInfo.channelId === obj.channelId) {
+            console.log('进来了')
+            // 清理工作
+            that.calling = false;
 
+            that.callingStatus.beCalling = false;
+            // 呼叫类型
+            that.callingStatus.type = null;
+            // 是否正忙
+            that.callingStatus.busy = false;
+            // 被叫信息
+            that.callingStatus.beCalledInfo = null;
+          }
+        });
       },
 
       Push() {//消息推送
@@ -620,22 +686,8 @@
           function getHistoryMsgsDone(error, obj) {
             if (!error) {
               obj.msgs.splice(5, obj.msgs.length);
-              /* console.log(obj.msgs);
-              for (let i = 0; i < obj.msgs.length; i++) {
-                if (obj.msgs[i].file) {
-                  if (obj.msgs[i].file.ext == "unknown") {
-                    var url = 'http://b12026.nos.netease.com/MTAxMTAxMA==/bmltYV8xMTQwMzFfMTQ1MTg4ODk5MjMxMV9mNmI1Y2QyZC03N2UzLTQxNmUtYWY5NC1iODlhZGY4ZTYzYWQ=';
-                    var mp3Url = nim.audioToMp3({
-                      url: url
-                    });
-                    console.log(obj.msgs[i].file.url);
-                    console.log(that.nim.audioToMp3({url: obj.msgs[i].file.url}));
-                    obj.msgs[i].file.url = that.nim.audioToMp3({url: obj.msgs[i].file.url});
-                  }
-                }
-              } */
               that.list = obj.msgs.reverse();
-
+              that.$toast.clear();
             }
           }
         }, 400);
@@ -643,8 +695,8 @@
       AudioAndVideo: function () {//音视频集成
         var that = this;
         NIM.use(WebRTC);
-        const Netcall = WebRTC;
-        this.netcall = Netcall.getInstance({
+
+        this.netcall = WebRTC.getInstance({
           nim: that.nim,
           debug: true
         });
@@ -671,12 +723,18 @@
             }
           })
         }
-
-
-
       },
     },
     created: function () {
+      var that = this;
+
+      /* this.$toast.loading({
+        message: '加载中...',
+        overlay:true,
+        forbidClick: true,
+        duration:0
+      }); */
+
       this.MyFun();
       this.Text();
       window.addEventListener('mousewheel', this.handleScroll, true);
@@ -684,6 +742,33 @@
   }
 </script>
 <style>
+  .calling80 {
+    height: 60%;
+    padding-top: 20%;
+  }
+
+  .iconhangupbox {
+    width: 100%;
+    bottom: 0;
+  }
+
+  .iconhangup {
+    color: #fff;
+    font-size: 30px !important;
+    background-color: #e46568;
+    padding: 5px 50px;
+    border-radius: 20px;
+  }
+
+  .callingback {
+    height: 100%;
+    background-image: linear-gradient(#e66465, #9198e5);
+  }
+
+  .callingImg {
+    border-radius: 100px;
+  }
+
   .inputContent {
     text-indent: 5px;
     resize: none;
@@ -800,6 +885,7 @@
   .phoneIcon {
     right: 15px;
     top: 1px;
+    font-size: 22px !important;
   }
 
   .saveButton {

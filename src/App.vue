@@ -300,5 +300,10 @@
   .border0{
     border:none;
   }
-  
+  .padtopcol50{
+    padding-top: 50%;
+  }
+  .padtopcol80{
+    padding-top: 80%;
+  }
 </style>
