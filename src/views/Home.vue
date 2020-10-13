@@ -3,17 +3,16 @@
     <div class="header fixed center backfff" v-if="Mobile">
       <div class="iconfont icon-arrowl absolute" @click="back" v-if="Mobile"></div>
       <div class="ft18">{{youAccid}}</div>
-
     </div>
     <div class="header fixed center backfff lheight50" v-else>
       <div class="iconfont icon-arrowl absolute" @click="back" v-if="Mobile"></div>
       <div class="ft18">{{youAccid}}</div>
-
     </div>
     <van-pull-refresh v-model="isLoading" @refresh="onRefresh" :class="!disabled ? 'vanpull' : 'a12'"
       :disabled="disabled">
       <div class="Con col94 auto" ref="element">
         <div class="time center ft12 colorbbb lheight50">{{time}}</div>
+        <div class="status_bar"></div>
         <div v-for="(item,index) in list">
           <div class="you clearfix conbox" v-if="item.flow == 'in'">
             <img src="@/assets/img/photo2.jpg" class="photo left col10" />
@@ -71,7 +70,7 @@
           <div class="right col10 center mar relative clearfix">
 
             <div>
-              <div class="iconfont icon-sound ft22" @touchstart="AudioSendStart" @touchend="AudioSendEnd" v-if="Mobile">
+              <div class="iconfont icon-sound ft22" @touchstart="AudioSendStart" @touchend="AudioSendEnd">
               </div>
             </div>
           </div>
@@ -186,6 +185,7 @@
         this.list[e]['audioObj'] = this.$refs.audio[e];
       },
       Phone: function () {//CAll
+        
         var that = this;
         const netcall = this.netcall;
         const pushConfig = {
@@ -273,6 +273,7 @@
         const netcall = this.netcall;
         // 开启监听
         netcall.on('beCalling', function (obj) {
+          /*  that.Push(); */
           console.log('on beCalling', obj);
           const channelId = obj.channelId;
           // 被叫回应主叫自己已经收到了通话请求
@@ -304,6 +305,7 @@
               });
             }
           }
+
           that.$dialog.confirm({
             title: '收到' + that.youAccid + '的呼叫',
           }).then(function (res) {
@@ -386,11 +388,10 @@
           }
         });
       },
-
       Push() {//消息推送
         var that = this;
         this.$axios({
-          url: "http://192.168.1.88:9999/app/push/message/pushone",
+          url: "http://60.190.98.133:7026/app/push/message/pushone",
           method: "POST",
           data: {
             yunxinAccid: that.myAccid,
@@ -401,7 +402,6 @@
         })
       },
       AudioSendStart() {//手指按下时
-        console.log(123)
         var that = this;
         setTimeout(function () {
           console.log(that.audioSend.plug)
@@ -437,7 +437,7 @@
               },
               beforesend: function (msg) {
                 that.list.push(msg);
-
+                that.Push();
               },
               done: function (error, msg) {
                 console.log(error, msg);
@@ -488,6 +488,7 @@
             console.log('正在发送p2p image消息, id=' + msg.idClient);
             that.list.push(msg);
             that.pushMsg(msg);
+            that.Push();
           },
           done: function (error, res) {
 
@@ -518,7 +519,6 @@
         if (!error) {
           this.list.push(msg);
           this.content = '';
-
           this.Push();
         }
       },
@@ -556,7 +556,7 @@
         var data = {};
         var that = this;
         this.nim = NIM.getInstance({
-          //debug: true,
+          debug: true,
           appKey: '3934c180238ac0fff98c048ec385cf7f',
           account: that.myAccid, //帐号, 应用内唯一
           token: that.myToken,
@@ -698,7 +698,7 @@
 
         this.netcall = WebRTC.getInstance({
           nim: that.nim,
-          debug: true
+          debug: false
         });
       },
       ScrollToFun() {//滑倒最底部
@@ -707,6 +707,13 @@
         }, 300)
       },
       MyFun() {
+        window.addEventListener('mousewheel', this.handleScroll, true);
+        /* this.$toast.loading({
+          message: '加载中...',
+          overlay: true,
+          forbidClick: true,
+          duration: 0
+        }); */
         var that = this;
         this.IsPc();
         this.bigImg.window = document.body.clientHeight + 'px';//点击图片放大fixed高度
@@ -726,18 +733,10 @@
       },
     },
     created: function () {
-      var that = this;
-
-      /* this.$toast.loading({
-        message: '加载中...',
-        overlay:true,
-        forbidClick: true,
-        duration:0
-      }); */
-
       this.MyFun();
       this.Text();
-      window.addEventListener('mousewheel', this.handleScroll, true);
+
+     
     }
   }
 </script>

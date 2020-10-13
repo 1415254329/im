@@ -232,9 +232,11 @@
   .color1BA886 {
     color: #1BA886;
   }
-  .bcakfff{
+
+  .bcakfff {
     background-color: #FFFFFF !important;
   }
+
   .bacff3f3f3 {
     background-color: #f3f3f3;
   }
@@ -282,28 +284,42 @@
   .ft12 {
     font-size: 12px;
   }
-  .ft22{
-    font-size:22px !important;
+
+  .ft22 {
+    font-size: 22px !important;
   }
-  .width800{
+
+  .width800 {
     width: 800px;
   }
-  .width1200{
+
+  .width1200 {
     width: 1200px;
   }
-  .lheight50{
+
+  .lheight50 {
     line-height: 50px !important;
   }
-  .pointer{
+
+  .pointer {
     cursor: pointer;
   }
-  .border0{
-    border:none;
+
+  .border0 {
+    border: none;
   }
-  .padtopcol50{
+
+  .padtopcol50 {
     padding-top: 50%;
   }
-  .padtopcol80{
+
+  .padtopcol80 {
     padding-top: 80%;
+  }
+
+  .status_bar {
+    height: var(--status-bar-height);
+    width: 100%;
+    background-color: #FFFFFF;
   }
 </style>
